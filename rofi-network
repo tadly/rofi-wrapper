@@ -22,7 +22,10 @@ LAUNCHER="rofi -dmenu -markup-rows -i -p network \
 SEPARATOR=", "
 
 # The networks to include
-TYPES=('Ethernet' '802-11-wireless' 'VPN')
+TYPES=('Ethernet' '802-11-wireless' 'vpn')
+
+# Titles for the previously defined types. Have to be even in count.
+TITLES=('Ethernet' 'Wi-Fi' 'VPN')
 
 
 function formate() {
@@ -55,16 +58,22 @@ function parse_rofi_uuid() {
     echo "$uuid"
 }
 
+if [ ${#TYPES[@]} -ne ${#TITLES[@]} ]; then
+    echo "'TYPES' and 'TITLES' aren't even."
+    exit 1
+fi
+
 # Get a list of all connections
 networks="$(nmcli -t -f "name,uuid,type,state" c show)"
 
 # Generate a list for rofi to display
-for type_ in "${TYPES[@]}"; do
-    cons="$(filter "$networks" "${type_,,}")"
+#for type_ in "${TYPES[@]}"; do
+for i in ${!TYPES[@]}; do
+    cons="$(filter "$networks" ${TYPES[$i]})"
     if [ -z "$cons" ]; then
         continue
     fi
-    rofi_options+="<b>$type_ Networks</b>\n"
+    rofi_options+="<u><b>${TITLES[$i]}</b></u>\n"
     rofi_options+="$(formate "$cons")"
     rofi_options+="\n"
 done

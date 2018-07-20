@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+#
+#   Use rofi to call systemctl for shutdown, reboot, etc.
+#
+#   Requirements:
+#     rofi, systemd
+#
+
+LAUNCHER="rofi -dmenu -i -p power $@"
+
+EXIT_CMD="i3-msg exit"
+LOCK_CMD="~/.bin/lock"
+
+
+options="Exit window manager"
+options+="\nLock screen"
+options+="\nReboot"
+options+="\nPower-off"
+options+="\nSuspend"
+options+="\nHibernate"
+
+action=$(echo -e "$options" | $LAUNCHER)
+
+if [ $? -ne 0 ]; then
+    exit
+fi
+
+case "$action" in
+  "Exit window manager")
+    eval "$EXIT_CMD"
+    ;;
+  "Lock screen")
+    eval "$LOCK_CMD"
+    ;;
+  "Reboot")
+    systemctl reboot
+    ;;
+  "Power off")
+    systemctl poweroff
+    ;;
+  "Suspend")
+    [[ ! -z "$LOCKER" ]] && eval "$LOCKER"
+    systemctl suspend
+    ;;
+  "Hibernate")
+    [[ ! -z "$LOCKER" ]] && eval "$LOCKER"
+    systemctl hibernate
+    ;;
+esac

@@ -86,7 +86,7 @@ active_index=${active_index%,}
 # Prepare additional arguments for rofi
 args=''
 if [ ! -z "$active_index" ]; then
-    args+="-u $active_index"
+    args+="-a $active_index"
 fi
 
 # Show rofi

@@ -22,25 +22,25 @@ LAUNCHER="rofi -dmenu -markup-rows -i -p network \
 SEPARATOR=", "
 
 # The networks to include
-TYPES=('Ethernet' 'Wifi' 'VPN')
+TYPES=('Ethernet' '802-11-wireless' 'VPN')
 
 
 function formate() {
-    echo "$(echo "$1" | awk -v sep="$SEPARATOR" \
+    echo "$(echo "$1" | awk -F ":" -v sep="$SEPARATOR" \
         '{print $1sep"<small>"$2"</small>"}')"
 }
 
 function filter() {
     networks="$1"
     type_="$2"
-    echo -e "$(echo "$networks" | awk -v t="$type_" '$3 == t')"
+    echo -e "$(echo "$networks" | awk -F ":" -v t="$type_" '$3 == t')"
 }
 
 function is_active() {
     networks="$1"
     uuid="$2"
     test ! -z "$(echo "$networks" \
-        | awk -v uuid="$uuid" '$2 == uuid && $4 == "yes"')"
+        | awk -F ":" -v uuid="$uuid" '$2 == uuid && $4 == "yes"')"
 }
 
 function parse_rofi_name() {
@@ -56,7 +56,7 @@ function parse_rofi_uuid() {
 }
 
 # Get a list of all connections
-networks="$(nmcli -f "name,uuid,type,active" c show | tail -n +2)"
+networks="$(nmcli -t -f "name,uuid,type,activated" c show)"
 
 # Generate a list for rofi to display
 for type_ in "${TYPES[@]}"; do
@@ -89,7 +89,7 @@ if [ ! -z "$active_index" ]; then
     args+="-u $active_index"
 fi
 
-# Show rofi 
+# Show rofi
 network="$(echo -e "$rofi_options" | $LAUNCHER $args)"
 action=$?
 

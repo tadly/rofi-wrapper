@@ -40,7 +40,7 @@ function is_active() {
     networks="$1"
     uuid="$2"
     test ! -z "$(echo "$networks" \
-        | awk -F ":" -v uuid="$uuid" '$2 == uuid && $4 == "yes"')"
+        | awk -F ":" -v uuid="$uuid" '$2 == uuid && $4 == "activated"')"
 }
 
 function parse_rofi_name() {
@@ -56,7 +56,7 @@ function parse_rofi_uuid() {
 }
 
 # Get a list of all connections
-networks="$(nmcli -t -f "name,uuid,type,activated" c show)"
+networks="$(nmcli -t -f "name,uuid,type,state" c show)"
 
 # Generate a list for rofi to display
 for type_ in "${TYPES[@]}"; do

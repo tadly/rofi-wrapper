@@ -83,10 +83,10 @@ function display() {
     line=($line)
 
     if [ $exit_code == 0 ]; then
-        sleep 0.1  # Delay pasting so the text-entry can come active
-        xdotool type --clearmodifiers "${line[0]}"
+        echo -n "${line[0]}" | xsel -i -p -b
+        xdotool key Ctrl+Shift+v
     elif [ $exit_code == 10 ]; then
-        echo -n "${line[0]}" | xsel -i -b
+        echo -n "${line[0]}" | xsel -i -p -b
     fi
 }
 

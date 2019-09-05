@@ -66,7 +66,7 @@ function download() {
 
         # Extract the emoji and its description
         emojis=$(echo "$emojis" | \
-                 sed -rn 's/.*<span class="emoji">(.*)<\/span> (.*)<\/a><\/li>/\1 \2/p')
+                 sed -rn 's/.*<span class="emoji">(.*)<\/span> (.*)<\/a><\/li>/0 \1 \2/p')
 
         echo "$emojis" >> "$EMOJI_FILE"
     done
@@ -76,17 +76,29 @@ function download() {
 
 
 function display() {
-    emoji=$(cat "$EMOJI_FILE" | grep -v '#' | grep -v '^[[:space:]]*$')
-    line=$(echo "$emoji" | $LAUNCHER)
+    emoji=$(sort -r -s -n -k 1,1 "$EMOJI_FILE" \
+            | grep -v '#' | grep -v '^[[:space:]]*$')
+
+    # Display without the history count
+    line=$(echo "$emoji" | cut -d" " -f2- | $LAUNCHER)
     exit_code=$?
 
-    line=($line)
+    if [ $exit_code -eq 1 ]; then
+        exit 0
+    fi
 
-    if [ $exit_code == 0 ]; then
-        echo -n "${line[0]}" | xsel -i -p -b
+    # Convert to an array
+    line=($line)
+    moji="${line[0]}"
+
+    # Increase history count
+    sed -i -E "s/^([0-9]+) ($moji .*)$/echo \"\$((\1+1)) \2\"/ge" "$EMOJI_FILE"
+
+    if [ $exit_code -eq 0 ]; then
+        echo -n $moji | xsel -i -p -b
         xdotool key Ctrl+Shift+v
-    elif [ $exit_code == 10 ]; then
-        echo -n "${line[0]}" | xsel -i -p -b
+    elif [ $exit_code -eq 10 ]; then
+        echo -n $moji | xsel -i -p -b
     fi
 }
 

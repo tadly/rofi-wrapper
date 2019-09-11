@@ -26,6 +26,9 @@ LAUNCHER="rofi -dmenu -i -p emoji -kb-custom-1 Ctrl+c $@"
 
 # Where to save the emojis to.
 EMOJI_FILE="$HOME/.cache/emojis.txt"
+EMOJI_HIST_FILE="$HOME/.cache/emojis.history"
+
+DELIMITER='  '
 
 # Urls of emoji to download.
 # You can remove what you don't need.
@@ -66,7 +69,7 @@ function download() {
 
         # Extract the emoji and its description
         emojis=$(echo "$emojis" | \
-                 sed -rn 's/.*<span class="emoji">(.*)<\/span> (.*)<\/a><\/li>/0 \1 \2/p')
+                 sed -rn "s/.*<span class=\"emoji\">(.*)<\/span> (.*)<\/a><\/li>/\\1$DELIMITER\\2/p")
 
         echo "$emojis" >> "$EMOJI_FILE"
     done
@@ -76,23 +79,34 @@ function download() {
 
 
 function display() {
-    emoji=$(sort -r -s -n -k 1,1 "$EMOJI_FILE" \
-            | grep -v '#' | grep -v '^[[:space:]]*$')
+    touch "$EMOJI_HIST_FILE"
+
+    emoji_hist=$(cat "$EMOJI_HIST_FILE")
+    emoji_orig=$(cat "$EMOJI_FILE")
+
+    # Combined emojis without:
+    #  - commented lines
+    #  - empty lines
+    #  - duplicates (due to history)
+    emoji=$(echo -e "$emoji_hist\n$emoji_orig" \
+            | grep -v '#' | grep -v '^[[:space:]]*$' | awk '!x[$0]++')
 
     # Display without the history count
-    line=$(echo "$emoji" | cut -d" " -f2- | $LAUNCHER)
+    line=$(echo "$emoji" | $LAUNCHER)
     exit_code=$?
 
     if [ $exit_code -eq 1 ]; then
         exit 0
     fi
 
-    # Convert to an array
-    line=($line)
-    moji="${line[0]}"
+    # Add to top of the history
+    emoji_hist="${line}\n${emoji_hist}"
+    # Rewrite history file without duplicates
+    echo -e "$emoji_hist" | awk '!x[$0]++' > "$EMOJI_HIST_FILE"
 
-    # Increase history count
-    sed -i -E "s/^([0-9]+) ($moji .*)$/echo \"\$((\1+1)) \2\"/ge" "$EMOJI_FILE"
+    # Extract emoji
+    line=(${line//$DELIMITER/ })
+    moji="${line[0]}"
 
     if [ $exit_code -eq 0 ]; then
         echo -n $moji | xsel -i -p -b
